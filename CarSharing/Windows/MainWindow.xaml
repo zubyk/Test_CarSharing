@@ -1,0 +1,91 @@
+﻿<Window x:Class="CarSharing.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:cvt="clr-namespace:CarSharing.Converters" 
+        xmlns:local="clr-namespace:CarSharing"
+        mc:Ignorable="d"
+        DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}"
+        MinWidth="515"
+        MinHeight="200"
+        Title="CarSharing" Height="451" Width="846">
+    <Window.Resources>
+        
+            <cvt:DateTimeFormatConverter x:Key="DateTimeFormatConverter"  />
+
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <DockPanel Margin="3">
+            <Label>Генерация автомобилей:</Label>
+            <Button Command="{Binding ToggleCarsGeneration}" MinWidth="40" Foreground="WhiteSmoke">
+                <Button.Style>
+                    <Style TargetType="{x:Type Button}">
+                        <Style.Setters>
+                            <Setter Property="Content" Value="Нет"></Setter>
+                        </Style.Setters>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCarsRunning}" Value="True">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Content" Value="Да"></Setter>
+                                    <Setter Property="Background" Value="Green"></Setter>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsCarsRunning}" Value="False">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Content" Value="Нет"></Setter>
+                                    <Setter Property="Background" Value="Red"></Setter>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Label>Генерация водителей:</Label>
+            <Button Command="{Binding ToggleDriversGeneration}" MinWidth="40" Foreground="WhiteSmoke">
+                <Button.Style>
+                    <Style TargetType="{x:Type Button}">
+                        <Style.Setters>
+                            <Setter Property="Content" Value="Нет"></Setter>
+                        </Style.Setters>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsDriversRunning}" Value="True">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Content" Value="Да"></Setter>
+                                    <Setter Property="Background" Value="Green"></Setter>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsDriversRunning}" Value="False">
+                                <DataTrigger.Setters>
+                                    <Setter Property="Content" Value="Нет"></Setter>
+                                    <Setter Property="Background" Value="Red"></Setter>
+                                </DataTrigger.Setters>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Просмотр базы данных" Padding="5,0" HorizontalAlignment="Right" Click="OpenDbFormButton_Click"></Button>
+        </DockPanel>
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Items, Mode=OneWay}" 
+            Margin="3, 0, 3, 3"
+            AutoGenerateColumns="False" 
+            CanUserSortColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserReorderColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Дата, время" MinWidth="150" Binding="{Binding Date, ConverterParameter=dd.MM.yy HH:mm:ss, Converter={StaticResource DateTimeFormatConverter}}"/>
+                <DataGridTextColumn Header="Автомобиль" MinWidth="200" Binding="{Binding Car}"/>
+                <DataGridTextColumn Header="Водитель" MinWidth="200" Binding="{Binding Driver}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
