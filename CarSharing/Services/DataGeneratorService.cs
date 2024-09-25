@@ -85,6 +85,7 @@ namespace CarSharing.Services
 
                 try
                 {
+                    // Выполняем проверку на случай если _dataProcessingTask еще не создавался либо уже запускался и останавливался через вызов DataGeneratorService.Stop(), либо прошлый вызов DataGeneratorService.Start() вызвал исключение
                     if (_dataProcessingTask is null
                         || _dataProcessingTask.Status == TaskStatus.Canceled
                         || _dataProcessingTask.Status == TaskStatus.RanToCompletion
@@ -92,19 +93,26 @@ namespace CarSharing.Services
                     {
                         var token = _cancellationTokenSource.Token;
 
-                        _dataProcessingTask = GenerateAndStoreData(token);
+                        _dataProcessingTask = new Task(async () => await GenerateAndStoreData(token).ConfigureAwait(false));
                     }
-
-                    if (_dataProcessingTask.Status == TaskStatus.Created) _dataProcessingTask.Start();
+                    
+                    // Если свежий _dataProcessingTask был создан в предыдущем If, то он будет иметь статус TaskStatus.Created, значит запускаем его.
+                    if (_dataProcessingTask.Status == TaskStatus.Created)
+                    {
+                        _logger.LogCritical("started");
+                        _dataProcessingTask.Start();
+                    }
                 }
                 catch (Exception e) when (_logger?.FilterAndLogError(e) == true)
                 {
+                    // Может возникнуть ситуация когда не удалось вызвать _dataProcessingTask.Start(), тогда обрабатываем ситуацию в finally
                 }
                 finally
                 {
+                    // Независимо от того как отработал метод устанавливает текущее состояние _isRunning на основе работающей/не работающей _dataProcessingTask
                     _isRunning = _dataProcessingTask is not null && (
-                        _dataProcessingTask?.Status != TaskStatus.Canceled 
-                        || _dataProcessingTask?.Status != TaskStatus.Canceled 
+                        _dataProcessingTask?.Status != TaskStatus.Canceled
+                        || _dataProcessingTask?.Status != TaskStatus.Canceled
                         || _dataProcessingTask?.Status != TaskStatus.Faulted);
                 }
             }
@@ -134,7 +142,18 @@ namespace CarSharing.Services
 
                         _logger?.LogMethodCall(caller: this, args: data);
 
-                        await _storage!.SaveDataAsync(data.Date, data.Data, cancellationToken).ConfigureAwait(false);
+                        try
+                        {
+                            await _storage!.SaveDataAsync(data.Date, data.Data, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException) { return; }
+                        catch (ObjectDisposedException) { return; }
+                        catch (Exception e) when (_logger?.FilterAndLogError(LogLevel.Warning, e) == true)
+                        {
+                            _datesQueue.Enqueue(date);
+
+                            continue;
+                        }
 
                         ThrowIfDisposed();
 
